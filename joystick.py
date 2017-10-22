@@ -21,7 +21,7 @@
 # (C) 2017 juergen@fabmail.org, distribute under GPLv2 or ask.
 #
 
-import evdev
+import evdev, select
 
 def decode_ecode(n):
         names = []
@@ -76,7 +76,20 @@ for device in devices:
 device = evdev.InputDevice(device_fn)
 init_rattle(device)
 
-for ev in device.read_loop():
+def js_read_loop(dev, timeout):
+        """
+        same as /usr/local/lib/python3.5/dist-packages/evdev/eventio.py:read_loop, but with a timeout...
+        """
+        while True:
+                r, w, x = select.select([dev.fd], [], [], timeout)
+                if len(r):
+                        for event in dev.read():
+                                yield event
+                else:
+                        yield evdev.InputEvent(0,0,evdev.ecodes.EV_SYN, evdev.ecodes.KEY_UNKNOWN,0)     # dummy when timout
+
+
+for ev in js_read_loop(device, 3.0):
         if ev.type == evdev.ecodes.EV_KEY:
                 print("key", ev.value, ev.code, decode_ecode(ev.code))
                 if   ev.code == evdev.ecodes.BTN_TRIGGER and ev.value == 1: rattle(device, 0)  # 288

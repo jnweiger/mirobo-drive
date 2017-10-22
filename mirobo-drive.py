@@ -8,17 +8,18 @@
 # study python3 -m evdev.evtest
 #
 # Requires: 
-#  - apt-get install pyhton3-pip
-#  - pip3 install pip3 install -U pip setuptools
+#  - apt-get install python3-pip
+#  - pip3 install -U pip setuptools
 #  - pip3 install evdev
 #
 #  - apt-get install libffi-dev libssl-dev python3-dev
 #  - pip3 install -U pip setuptools
 #  - pip3 install python-miio
+#  - git clone https://github.com/rytilahti/python-miio.git && ( cd python-miio; python3 setup.py install )
 
 
 import miio
-import socket, codecs, time, sys
+import socket, codecs, time, sys, select
 from miio.protocol import Message
 
 import evdev
@@ -31,7 +32,7 @@ def mirobo_discover():
         timeout = 5
         seen_addrs = []  # type: List[str]
         seen_tokens = []  # type: List[str]
-        addr = '<broadcast>'
+        addr = '192.168.8.1'    # '<broadcast>'
 
         # magic, length 32
         helobytes = bytes.fromhex(
@@ -115,9 +116,12 @@ def init_joystick():
         device_fn=None
         for device in devices:
                 print(device.fn, device.name, device.phys)
-                # take the last one.
-                device_fn=device.fn
+                c = device.capabilities()
+                if evdev.ecodes.EV_ABS in c and evdev.ecodes.EV_KEY in c:
+                        print(device.fn, "device has EV_ABS and EV_KEY")
+                        device_fn=device.fn
 
+        print("using joystick device", device_fn)
         device = evdev.InputDevice(device_fn)
         init_rattle(device)
         return device
@@ -174,8 +178,10 @@ bot = miio.Vacuum(ip=bots[0][0], token=bots[0][1], start_id=0, debug=True)
 # left joystick west:           ABS_X  127..0
 # left joystick down:           BTN_BASE5
 
+print(bot.status())
 botstate='Manual mode'
-bot.manual_start()
+try:    bot.manual_start()
+except: pass
 # reported states are
 #
 #  Idle
@@ -193,12 +199,24 @@ def bot_fan():
         bot.set_fan_speed(fan_speed[fan_speed_idx])
 
 bot_fwd=128 # values last seen from the joystick ABS_RZ or ABS_Y axis, 128 is center, 0 is north, 255 is south.
+bot_fwd_RZ, bot_fwd_Y = 128, 128
 bot_rot=128 # values last seen from the joystick ABS_Z  or ABS_X axis, 128 is center, 0 is west, 255 is east.
+bot_rot_Z, bot_rot_X = 128, 128
+
 
 def bot_drive():
         if botstate != 'Manual mode':
-                rattle(js, 1)
+                rattle(js, 0)
                 return
+        # both joystick should work. If you move both, the right one wins.
+        if bot_fwd_RZ == 128:
+                bot_fwd = bot_fwd_Y
+        else:
+                bot_fwd = bot_fwd_RZ
+        if bot_rot_Z == 128:
+                bot_rot = bot_rot_X
+        else:
+                bot_rot = bot_rot_Z
         velocity = 0            # ]-0.3 .. 0.3[ bratwurst
         rotation = 0            # ]-180 .. 180[ degree
         duration = 1500         # msec
@@ -210,14 +228,37 @@ def bot_drive():
         print("bot_drive", rotation, velocity, duration)
         bot.manual_control(rotation, velocity, duration)
 
-for ev in js.read_loop():
+def js_read_loop(dev, timeout):
+        """
+        same as /usr/local/lib/python3.5/dist-packages/evdev/eventio.py:read_loop, but with a timeout...
+        """
+        while True:
+                r, w, x = select.select([dev.fd], [], [], timeout)
+                if len(r):
+                        for event in dev.read():
+                                yield event
+                else:
+                        yield evdev.InputEvent(0,0,evdev.ecodes.EV_SYN, evdev.ecodes.KEY_UNKNOWN,0)     # dummy when timout
+
+for ev in js_read_loop(js, 1.4):
         if   ev.type == evdev.ecodes.EV_ABS:
                 print("abs", ev.value, ev.code, decode_ecode(ev.code))
-                if   ev.code in (evdev.ecodes.ABS_RZ, evdev.ecodes.ABS_Y):
-                        bot_fwd = ev.value
+                # moving one joystick resets the other. in case we lost events...
+                if   ev.code == evdev.ecodes.ABS_RZ:
+                        bot_fwd_RZ = ev.value
+                        bot_rot_X,bot_fwd_Y = 128,128
                         bot_drive()
-                elif ev.code in (evdev.ecodes.ABS_Z, evdev.ecodes.ABS_X):
-                        bot_rot = ev.value
+                elif ev.code == evdev.ecodes.ABS_Y:
+                        bot_fwd_Y = ev.value
+                        bot_rot_Z,bot_fwd_RZ = 128,128
+                        bot_drive()
+                elif ev.code == evdev.ecodes.ABS_Z:
+                        bot_rot_Z = ev.value
+                        bot_rot_X,bot_fwd_Y = 128,128
+                        bot_drive()
+                elif ev.code == evdev.ecodes.ABS_X:
+                        bot_rot_X = ev.value
+                        bot_rot_Z,bot_fwd_RZ = 128,128
                         bot_drive()
                 elif ev.code == evdev.ecodes.ABS_HAT0Y:
                         if ev.value < 0 and fan_speed_idx < len(fan_speed)-1: 
@@ -275,3 +316,6 @@ for ev in js.read_loop():
                 elif ev.code == evdev.ecodes.BTN_TOP2:           # left front bottom
                         bot.manual_start()
                         botstate = 'Manual mode'
+        elif ev.type == evdev.ecodes.EV_SYN:
+                if ev.code == evdev.ecodes.KEY_UNKNOWN:
+                        if botstate == 'Manual mode': bot_drive()
