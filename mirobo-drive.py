@@ -116,9 +116,12 @@ def init_joystick():
         device_fn=None
         for device in devices:
                 print(device.fn, device.name, device.phys)
-                # take the last one.
-                device_fn=device.fn
+                c = device.capabilities()
+                if evdev.ecodes.EV_ABS in c and evdev.ecodes.EV_KEY in c:
+                        print(device.fn, "device has EV_ABS and EV_KEY")
+                        device_fn=device.fn
 
+        print("using joystick device", device_fn)
         device = evdev.InputDevice(device_fn)
         init_rattle(device)
         return device
