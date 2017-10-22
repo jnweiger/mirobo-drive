@@ -9,12 +9,13 @@
 #
 # Requires: 
 #  - apt-get install python3-pip
-#  - pip3 install pip3 install -U pip setuptools
+#  - pip3 install -U pip setuptools
 #  - pip3 install evdev
 #
 #  - apt-get install libffi-dev libssl-dev python3-dev
 #  - pip3 install -U pip setuptools
 #  - pip3 install python-miio
+#  - git clone https://github.com/rytilahti/python-miio.git && ( cd python-miio; python3 setup.py install )
 
 
 import miio
