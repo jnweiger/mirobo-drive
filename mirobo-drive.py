@@ -8,7 +8,7 @@
 # study python3 -m evdev.evtest
 #
 # Requires: 
-#  - apt-get install pyhton3-pip
+#  - apt-get install python3-pip
 #  - pip3 install pip3 install -U pip setuptools
 #  - pip3 install evdev
 #
