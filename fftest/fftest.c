@@ -231,6 +231,7 @@ int main(int argc, char** argv)
 
 	printf("Uploading effect #0 (Periodic sinusoidal) ... ");
 	fflush(stdout);
+	write(2, &effects[0], sizeof(effects[0]));
 	if (ioctl(fd, EVIOCSFF, &effects[0]) == -1) {
 		perror("Error:");
 	} else {
