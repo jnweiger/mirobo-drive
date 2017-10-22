@@ -72,6 +72,8 @@ exit # back to the linux laptop
 </pre>
 
 # Resources
+http://python-evdev.readthedocs.io/en/latest/
+
 https://github.com/marcelrv/XiaomiRobotVacuumProtocol
 
 https://github.com/rytilahti/python-miio
