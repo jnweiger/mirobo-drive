@@ -11,9 +11,9 @@ sudo pip3 install python-miio
 
 mirobo discover --handshake 1
  INFO:mirobo.device:Sending discovery to <broadcast> with timeout of 5s..
- INFO:mirobo.device:  IP 192.168.8.1: 986 - token: b'7a67554e3037717a4f37386f62567442'
+ INFO:mirobo.device:  IP 192.168.8.1: 986 - token: b'xxxxxxxxxxxxxxxxxxxxxxxxxx'
 
-export MIROBO_IP=192.168.8.1 MIROBO_TOKEN=314d31316b6b6e5967504250776c6c33
+export MIROBO_IP=192.168.8.1 MIROBO_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 mirobo find
  Sending find the robot calls.
  0
