@@ -1,0 +1,7 @@
+# put this line near the end of /etc/rc.local
+#  (cd /root/rockrobo; screen -d -m -c screenrc)
+zombie on
+zombie_timeout 3
+screen python3 mirobo-drive.py
+log
+
