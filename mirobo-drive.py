@@ -16,6 +16,9 @@
 #  - pip3 install -U pip setuptools
 #  - pip3 install python-miio
 #  - git clone https://github.com/rytilahti/python-miio.git && ( cd python-miio; python3 setup.py install )
+#
+# 2017-11-17, jw	State machine can now exit cleaning mode. 
+#                       Rotation is less sensitive at higher speeds.
 
 
 import miio
@@ -225,6 +228,8 @@ def bot_drive():
         if bot_fwd > 128:       # backwards 1/2 rd speed.
                 velocity = (128-bot_fwd)/128.*0.15
         rotation = (128-bot_rot)/128.0*100      # fastest 179
+        # make the rotation less sensitive the faster we go!
+        rotation *= 1-min(1.666*abs(velocity), 0.8)	# velocity=0: 1:1, velocity=0.3: 1:2
         print("bot_drive", rotation, velocity, duration)
         bot.manual_control(rotation, velocity, duration)
 
@@ -275,7 +280,7 @@ for ev in js_read_loop(js, 1.4):
                         print(botstate, res)
                         # transitions normally not seen:
                         #  Returning home -> Charging
-                        botstate = res.state                    
+                        botstate = res.state
                 elif ev.code == evdev.ecodes.BTN_THUMB:         # right cross East
                         if botstate == 'Manual mode': bot.manual_stop()
                         botstate = 'Cleaning'
@@ -286,7 +291,7 @@ for ev in js_read_loop(js, 1.4):
                         bot.home()
                 elif ev.code == evdev.ecodes.BTN_TOP:           # right cross West
                         if botstate == 'Manual mode': bot.manual_stop()
-                        if botstate == 'Cleaning':   bot.stop()
+                        if botstate == 'Cleaning':   bot.pause()
                         botstate = 'Spot cleaning'
                         bot.spot()
                 elif ev.code == evdev.ecodes.BTN_BASE4:          # center right:         start
@@ -296,23 +301,25 @@ for ev in js_read_loop(js, 1.4):
                         elif botstate == 'Idle':
                                 bot.manual_start()
                                 botstate = 'Manual mode'
-                        elif botstate == 'Cleaning':
-                                bot.stop()
+                        elif botstate == 'Cleaning' or botstate == 'Spot cleaning':
+                                bot.pause()
                                 botstate = 'Idle'
                         else:
-                                print("Unknown state", botstate, "doing nothing.")
+                                print("BTN_BASE4: Unknown state", botstate, "doing nothing.")
                         res = bot.status()
                         print(botstate, res)
                 elif ev.code == evdev.ecodes.BTN_BASE:           # left front bottom
                         if botstate == 'Manual mode':
                                 bot.manual_stop()
-                        elif botstate == 'Cleaning':
+                        elif botstate == 'Cleaning' or botstate == 'Spot cleaning' or botstate == 'Returning home':
+                                bot.pause()
+                        elif botstate == 'Idle' or botstate == 'Paused': # after paused
                                 bot.stop()
                         else:
-                                print("Unknown state:", botstate, " -- doing nothing.")
-                        botstate = 'Idle'
+                                print("BTN_BASE: Unknown state:", botstate, " -- doing nothing.")
                         res = bot.status()
                         print(botstate, res)
+                        botstate = res.state                    
                 elif ev.code == evdev.ecodes.BTN_TOP2:           # left front bottom
                         bot.manual_start()
                         botstate = 'Manual mode'
