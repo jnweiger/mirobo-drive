@@ -7,7 +7,7 @@
 # study fftest.c from https://git.code.sf.net/p/linuxconsole/code
 # study python3 -m evdev.evtest
 #
-# Requires: 
+# Requires:
 #  - apt-get install python3-pip
 #  - pip3 install -U pip setuptools
 #  - pip3 install evdev
@@ -17,7 +17,7 @@
 #  - pip3 install python-miio
 #  - git clone https://github.com/rytilahti/python-miio.git && ( cd python-miio; python3 setup.py install )
 #
-# 2017-11-17, jw	State machine can now exit cleaning mode. 
+# 2017-11-17, jw	State machine can now exit cleaning mode.
 #                       Rotation is less sensitive at higher speeds.
 
 
@@ -67,7 +67,7 @@ def mirobo_discover():
                 print("error while reading discover results: %s", ex)
                 break
         return None
- 
+
 
 
 def decode_ecode(n):
@@ -163,13 +163,13 @@ bot = miio.Vacuum(ip=bots[0][0], token=bots[0][1], start_id=0, debug=True)
 #
 # left cross north:             ABS_HAT0Y, -1   increment volume 10%
 # left cross south:             ABS_HAT0Y, 1    decrement volume 10%
-# left cross east:              ABS_HAT0X, 1           
-# left cross west:              ABS_HAT0X, -1           
+# left cross east:              ABS_HAT0X, 1
+# left cross west:              ABS_HAT0X, -1
 #
 # center left:          select  BTN_BASE3
 # center right:         start   BTN_BASE4       toggle start/stop manual mode
 #
-# right joystick north:         ABS_RZ 127..0   
+# right joystick north:         ABS_RZ 127..0
 # right joystick south:         ABS_RZ 129..255
 # right joystick east:          ABS_Z  129..255
 # right joystick west:          ABS_Z  127..0
@@ -266,10 +266,10 @@ for ev in js_read_loop(js, 1.4):
                         bot_rot_Z,bot_fwd_RZ = 128,128
                         bot_drive()
                 elif ev.code == evdev.ecodes.ABS_HAT0Y:
-                        if ev.value < 0 and fan_speed_idx < len(fan_speed)-1: 
+                        if ev.value < 0 and fan_speed_idx < len(fan_speed)-1:
                                 fan_speed_idx += 1
                                 bot_fan()
-                        if ev.value > 0 and fan_speed_idx > 0: 
+                        if ev.value > 0 and fan_speed_idx > 0:
                                 fan_speed_idx -= 1
                                 bot_fan()
 
@@ -319,7 +319,7 @@ for ev in js_read_loop(js, 1.4):
                                 print("BTN_BASE: Unknown state:", botstate, " -- doing nothing.")
                         res = bot.status()
                         print(botstate, res)
-                        botstate = res.state                    
+                        botstate = res.state
                 elif ev.code == evdev.ecodes.BTN_TOP2:           # left front bottom
                         bot.manual_start()
                         botstate = 'Manual mode'
