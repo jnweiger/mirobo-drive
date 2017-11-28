@@ -58,20 +58,22 @@ def mirobo_discover():
         return None
 
 
-bots = mirobo_discover()
-if bots is None or len(bots) == 0:
-	js.close()
-	sys.exit("No robots found. Please check your wlan is connected to a robot\n")
+if __name__ == '__main__':
+        bots = mirobo_discover()
+        if bots is None or len(bots) == 0:
+        	js.close()
+        	sys.exit("No robots found. Please check your wlan is connected to a robot\n")
 
-bot = miio.Vacuum(ip=bots[0][0], token=bots[0][1], start_id=0, debug=True)
+        bot = miio.Vacuum(ip=bots[0][0], token=bots[0][1], start_id=0, debug=True)
 
-print("timezone=",bot.timezone())
-print(bot.timer())                     # id=1505168889826
-# bot.delete_timer(1505168889826)
+        print("timezone=",bot.timezone())
+        print(bot.timer())                     # id=1505168889826
+        # bot.delete_timer(1505168889826)
+        #
+        # cron:
+        # MIN HOUR DAY MON WDAY
+        #   0    8   *   * 0,1,2,3,4,5,6
+        #
+        #                                             fan_speed
+        # bot.add_timer('35 18 * * *', 'start_clean', 99)
 
-# cron:
-# MIN HOUR DAY MON WDAY
-#   0    8   *   * 0,1,2,3,4,5,6
-
-#                                             fan_speed
-# bot.add_timer('35 18 * * *', 'start_clean', 99)
