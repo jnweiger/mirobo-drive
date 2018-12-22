@@ -72,6 +72,9 @@ exit # back to the linux laptop
 </pre>
 
 # Resources
+
+https://www.thingiverse.com/thing:2615052
+
 http://python-evdev.readthedocs.io/en/latest/
 
 https://github.com/marcelrv/XiaomiRobotVacuumProtocol
